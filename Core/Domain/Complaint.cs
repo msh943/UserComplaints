@@ -16,5 +16,7 @@ namespace Core.Domain
         public string? ComplaintText { get; set; }
         public string? AttachmentPath { get; set; }
         public ICollection<Demand>? Demands { get; set; }
+
+        public bool isApproved { get; set; }
     }
 }
