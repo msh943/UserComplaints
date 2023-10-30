@@ -1,7 +1,10 @@
-﻿using Core.Domain;
+﻿using Core.Contract;
+using Core.Domain;
+using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+
 
 namespace UserComplaint.Controllers
 {
@@ -9,37 +12,65 @@ namespace UserComplaint.Controllers
     [ApiController]
     public class UserComplaintController : ControllerBase
     {
-
-        [HttpPost]
-        public async Task<IActionResult> PostComplaint([FromForm] IFormFile AttachmentPath, [FromForm] string ComplaintText,
-           [FromForm] bool isApproved)
+        private readonly IWebHostEnvironment? _webHostEnvironment;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly AppDbContext _context;
+        public UserComplaintController(IWebHostEnvironment webHostEnvironment, IHttpContextAccessor httpContextAccessor,
+            AppDbContext context)
         {
-            VaildateUploadFile(AttachmentPath);
-
-            if(ModelState.IsValid)
-            {
-                var Complaints = new Complaint
-                {
-
-                };
-
-            }
-            return Ok();
+            _webHostEnvironment = webHostEnvironment;
+            _httpContextAccessor = httpContextAccessor;
+            _context = context;
         }
 
-        private void VaildateUploadFile(IFormFile AttachmentPath)
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<IEnumerable<ComplaintDTO>> Get()
         {
-            var allowedExtensions = new string[] { ".pdf" };
+            return Ok(_context.Complaints.ToList());
+        }
 
-            if (!allowedExtensions.Contains(Path.GetExtension(AttachmentPath.FileName).ToLower()))
+        [HttpGet("id:int")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<IEnumerable<ComplaintDTO>> Get(int id)
+        {
+            if(id == 0)
             {
-                ModelState.AddModelError("AttachmentPath", "Unsupported File Format!!");
+                return BadRequest();
             }
+            var complaint = _context.Complaints.FirstOrDefault(u => u.ComplaintId == id);
+            if(complaint == null)
+            {
+                return NotFound();
+            }
+            return Ok(complaint);
+        }
 
-            if(AttachmentPath.Length > 104857600)
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public ActionResult<ComplaintDTO> CreateComplaint([FromForm] ComplaintDTO complaintDTO)
+        {
+            if(complaintDTO == null)
             {
-                ModelState.AddModelError("AttachmentPath", "File Size Cannot Be More Than 100MB!!");
+                return BadRequest(complaintDTO);
             }
+            if(complaintDTO.ComplaintId > 0)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+            Complaint complaints = new()
+            {
+                ComplaintId = complaintDTO.ComplaintId,
+                ComplaintText = complaintDTO.ComplaintText,
+                isApproved = complaintDTO.isApproved
+            };
+            _context.Complaints.Add(complaints);
+            _context.SaveChanges();
+            return Ok();
         }
     }
 }

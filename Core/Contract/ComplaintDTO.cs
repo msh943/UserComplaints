@@ -1,15 +1,15 @@
-﻿using System;
+﻿using Core.Domain;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Core.Domain
+namespace Core.Contract
 {
-    public class Complaint
+    public class ComplaintDTO
     {
-        [Key]
         public int ComplaintId { get; set; }
         [Required]
         [MaxLength(600)]
@@ -21,8 +21,5 @@ namespace Core.Domain
         public ICollection<Demand>? Demands { get; set; }
 
         public bool isApproved { get; set; }
-
-        public DateTime? DateCreated { get; set; } = DateTime.Now;
-        public DateTime? DateModified { get; set; }
     }
 }

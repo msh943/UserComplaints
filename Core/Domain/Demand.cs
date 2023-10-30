@@ -18,5 +18,7 @@ namespace Core.Domain
         [ForeignKey("ComplaintId")]
         public int ComplaintId { get; set; }
         public Complaint? Complaint { get; set; }
+        public DateTime? DateCreated { get; set; } = DateTime.Now;
+        public DateTime? DateModified { get; set; }
     }
 }
