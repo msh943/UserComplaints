@@ -8,8 +8,9 @@ using System.Threading.Tasks;
 
 namespace Core.Contract
 {
-    public class ComplaintDTO
+    public class ComplaintUpdateDTO
     {
+        public int ComplaintId { get; set; }
         [Required]
         [MaxLength(600)]
         public string? ComplaintText { get; set; }
@@ -18,6 +19,7 @@ namespace Core.Contract
         public string? Title { get; set; }
         public string? Url { get; set; }
         public ICollection<Demand>? Demands { get; set; }
+
         public bool isApproved { get; set; }
     }
 }

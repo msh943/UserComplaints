@@ -1,3 +1,4 @@
+using Infrastructure.Application;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -6,7 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddNewtonsoftJson().AddXmlDataContractSerializerFormatters();
+builder.Services.AddAutoMapper(typeof(MappingConfig));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
