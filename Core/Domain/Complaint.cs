@@ -12,11 +12,7 @@ namespace Core.Domain
         [Key]
         public int ComplaintId { get; set; }
         [Required]
-        [MaxLength(600)]
         public string? ComplaintText { get; set; }
-        public string? DocName { get; set; }
-        public string? FileExtension { get; set; }
-        public string? Title { get; set; }
         public string? Url { get; set; }
         public ICollection<Demand>? Demands { get; set; }
 

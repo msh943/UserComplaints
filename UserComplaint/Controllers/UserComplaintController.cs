@@ -56,7 +56,7 @@ namespace UserComplaint.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateComplaint([FromForm] IFormFile file, 
             [FromForm] string ComplainText,
-            [FromForm] string Tilte, [FromForm] int isApproved, [FromForm] string DocName
+            [FromForm] int isApproved
             )
         {
             ValidateFileUpload(file);
@@ -65,9 +65,7 @@ namespace UserComplaint.Controllers
                 var complaints = new Complaint
                 {
                     ComplaintText = ComplainText,
-                    DocName = DocName,
-                    Title = Tilte,
-                    FileExtension = Path.GetExtension(file.FileName).ToLower()
+                    isApproved = isApproved
 
                 };
                 complaints = await _userComplaints.Create(file, ComplainText, isApproved, complaints);
@@ -77,9 +75,6 @@ namespace UserComplaint.Controllers
                     ComplaintText = complaints.ComplaintText,
                     Url = complaints.Url,
                     isApproved = complaints.isApproved,
-                    DocName = complaints.DocName,
-                    Title = complaints.Title,
-                    FileExtension = complaints.FileExtension
                 };
                 return Ok(response);
             }
