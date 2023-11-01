@@ -70,7 +70,6 @@ namespace UserComplaint.Controllers
                     FileExtension = Path.GetExtension(file.FileName).ToLower()
 
                 };
-
                 complaints = await _userComplaints.Create(file, ComplainText, isApproved, complaints);
 
                 var response = new ComplaintDTO
