@@ -25,21 +25,23 @@ namespace Infrastructure.Services
             _contextAccessor = httpContextAccessor;
             _context = context;
         }
-        public async Task Create(IFormFile file, string complaint, int IsApproved, Complaint complaints)
+        public async Task<Complaint> Create(IFormFile file, string complaint, int IsApproved, Complaint complaints)
         {
             var localPath = Path.Combine(_webHostEnvironment.ContentRootPath, "Images",
-                $"{complaints.FileName}{complaints.FileExtension}");
+                $"{complaints.DocName}{complaints.FileExtension}");
 
             using var stream = new FileStream(localPath, FileMode.Create);
             await file.CopyToAsync(stream);
 
             var request = _contextAccessor.HttpContext!.Request;
-            var urlPath = $"{request.Scheme}://{request.Host}{request.PathBase}/Images/{complaints.FileName}{complaints.FileExtension}";
+            var urlPath = $"{request.Scheme}://{request.Host}{request.PathBase}/Images/{complaints.DocName}{complaints.FileExtension}";
             complaints.Url = urlPath;
             complaints.isApproved = IsApproved;
             complaints.ComplaintText = complaint;
             await _context.Complaints.AddAsync(complaints);
             await Save();
+
+            return complaints;
         }
 
         public async Task<Complaint> Get(Expression<Func<Complaint,bool>> filter = null, bool tracked = true)

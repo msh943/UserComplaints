@@ -1,4 +1,5 @@
 ﻿using Core.Domain;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -13,11 +14,11 @@ namespace Core.Contract
         [Required]
         [MaxLength(600)]
         public string? ComplaintText { get; set; }
-        public string? FileName { get; set; }
+        public string? DocName { get; set; }
         public string? FileExtension { get; set; }
         public string? Title { get; set; }
         public string? Url { get; set; }
         public ICollection<Demand>? Demands { get; set; }
-        public bool isApproved { get; set; }
+        public int isApproved { get; set; }
     }
 }

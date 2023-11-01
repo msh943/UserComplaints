@@ -54,32 +54,47 @@ namespace UserComplaint.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ComplaintDTO>> CreateComplaint([FromForm] string complaintText, 
-            IFormFile file, [FromForm] string FileName, [FromForm] string title, [FromForm] int isApproved,
-            ComplaintDTO complaintDTO)
+        public async Task<IActionResult> CreateComplaint([FromForm] IFormFile file, 
+            [FromForm] string ComplainText,
+            [FromForm] string Tilte, [FromForm] int isApproved, [FromForm] string DocName
+            )
         {
             ValidateFileUpload(file);
-            //if(ModelState.IsValid)
-            //{
-            //    var complaints = new Complaint
-            //    {
-            //        ComplaintText = complaintText,
-            //        FileName = FileName,
-            //        Title = title,
-            //        FileExtension = Path.GetExtension(file.FileName).ToLower()
-
-            //    };
-            //    await _userComplaints.Create(file, complaintText, isApproved, complaints);
-            //}
-
-            if (complaintDTO == null)
+            if (ModelState.IsValid)
             {
-                return BadRequest(complaintDTO);
+                var complaints = new Complaint
+                {
+                    ComplaintText = ComplainText,
+                    DocName = DocName,
+                    Title = Tilte,
+                    FileExtension = Path.GetExtension(file.FileName).ToLower()
+
+                };
+
+                complaints = await _userComplaints.Create(file, ComplainText, isApproved, complaints);
+
+                var response = new ComplaintDTO
+                {
+                    ComplaintText = complaints.ComplaintText,
+                    Url = complaints.Url,
+                    isApproved = complaints.isApproved,
+                    DocName = complaints.DocName,
+                    Title = complaints.Title,
+                    FileExtension = complaints.FileExtension
+                };
+                return Ok(response);
             }
 
-            Complaint complaints = _mapper.Map<Complaint>(complaintDTO);
-            await _userComplaints.Create(file, complaintText, isApproved, complaints);
-            return Ok();
+            return BadRequest(ModelState);
+
+            //if (complaintDTO == null)
+            //{
+            //    return BadRequest(complaintDTO);
+            //}
+
+            //Complaint complaints = _mapper.Map<Complaint>(complaintDTO);
+            //await _userComplaints.Create(file, complaintText, isApproved, complaints);
+
         }
 
        
