@@ -53,8 +53,8 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Url")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("isApproved")
-                        .HasColumnType("bit");
+                    b.Property<int>("isApproved")
+                        .HasColumnType("int");
 
                     b.HasKey("ComplaintId");
 

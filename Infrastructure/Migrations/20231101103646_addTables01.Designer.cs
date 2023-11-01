@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231030192944_addTables01")]
+    [Migration("20231101103646_addTables01")]
     partial class addTables01
     {
         /// <inheritdoc />
@@ -56,8 +56,8 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Url")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("isApproved")
-                        .HasColumnType("bit");
+                    b.Property<int>("isApproved")
+                        .HasColumnType("int");
 
                     b.HasKey("ComplaintId");
 

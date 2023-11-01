@@ -20,7 +20,7 @@ namespace Core.Domain
         public string? Url { get; set; }
         public ICollection<Demand>? Demands { get; set; }
 
-        public bool isApproved { get; set; }
+        public int isApproved { get; set; }
 
         public DateTime? DateCreated { get; set; } = DateTime.Now;
         public DateTime? DateModified { get; set; }
