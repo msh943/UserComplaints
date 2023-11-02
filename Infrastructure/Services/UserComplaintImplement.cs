@@ -13,80 +13,21 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Services
 {
-    public class UserComplaintImplement : IUserComplaints
+    public class UserComplaintImplement : UnitOfWork<Complaint> ,IUserComplaints
     {
-        private readonly IWebHostEnvironment _webHostEnvironment;
-        private readonly IHttpContextAccessor _contextAccessor;
         private readonly AppDbContext _context;
-        public UserComplaintImplement(IWebHostEnvironment webHostEnvironment, IHttpContextAccessor httpContextAccessor,
-            AppDbContext context)
+        public UserComplaintImplement(AppDbContext context) : base(context)
         {
-            _webHostEnvironment = webHostEnvironment;
-            _contextAccessor = httpContextAccessor;
             _context = context;
         }
-        public async Task<Complaint> Create(IFormFile file, string complaint, int IsApproved, Complaint complaints)
+        
+
+        public async Task<Complaint> Update(Complaint complaint)
         {
-            var localPath = Path.Combine(_webHostEnvironment.ContentRootPath, "Images",
-                $"{file.FileName}{Path.GetExtension(file.FileName).ToLower()}");
-
-            using var stream = new FileStream(localPath, FileMode.Create);
-            await file.CopyToAsync(stream);
-
-            var request = _contextAccessor.HttpContext!.Request;
-            var urlPath = $"{request.Scheme}://{request.Host}{request.PathBase}/Images/{file.FileName}{Path.GetExtension(file.FileName).ToLower()}";
-            complaints.Url = urlPath;
-            complaints.isApproved = IsApproved;
-            complaints.ComplaintText = complaint;
-            await _context.Complaints.AddAsync(complaints);
-            await Save();
-
-            return complaints;
-        }
-
-        public async Task<Complaint> Get(Expression<Func<Complaint,bool>> filter = null, bool tracked = true)
-        {
-            IQueryable<Complaint> query = _context.Complaints;
-
-            if (!tracked)
-            {
-                query = query.AsNoTracking();
-            }
-            if (filter != null)
-            {
-                query = query.Where(filter);
-
-            }
-            return await query.FirstOrDefaultAsync();
-        }
-
-        public async Task<List<Complaint>> GetAll(Expression<Func<Complaint, bool>> filter = null)
-        {
-            IQueryable<Complaint> query = _context.Complaints;
-
-            if(filter != null)
-            {
-                query = query.Where(filter);
-
-            }
-            return await query.ToListAsync();
-        }
-
-        public async Task Remove(Complaint complaint)
-        {
-            _context.Remove(complaint);
-            await Save();
-        }
-
-        public async Task Save()
-        {
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task Update(Complaint complaint)
-        {
+            complaint.DateModified = DateTime.Now;
             _context.Complaints.Update(complaint);
-            await Save();
+            await _context.SaveChangesAsync();
+            return complaint;
         }
     }
 }

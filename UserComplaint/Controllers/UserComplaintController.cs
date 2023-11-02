@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using Core.IService;
+using Microsoft.AspNetCore.Hosting;
+using Core.Exception;
+using System.Net;
 
 namespace UserComplaint.Controllers
 {
@@ -17,114 +20,183 @@ namespace UserComplaint.Controllers
     public class UserComplaintController : ControllerBase
     {
         private readonly IUserComplaints _userComplaints;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IHttpContextAccessor _contextAccessor;
         private readonly IMapper _mapper;
-        public UserComplaintController(IUserComplaints userComplaints, IMapper mapper)
+        protected APIResponse _response;
+        public UserComplaintController(IUserComplaints userComplaints, IMapper mapper, 
+            IWebHostEnvironment webHostEnvironment, IHttpContextAccessor httpContextAccessor)
         {
             _userComplaints = userComplaints;
             _mapper = mapper;
+            _webHostEnvironment = webHostEnvironment;
+            _contextAccessor = httpContextAccessor;
+            this._response = new ();
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<ComplaintDTO>>> Get()
+        public async Task<ActionResult<APIResponse>> Get()
         {
-            IEnumerable<Complaint> complaints = await _userComplaints.GetAll();
-            return Ok(_mapper.Map<List<ComplaintDTO>>(complaints));
+            try
+            {
+                IEnumerable<Complaint> complaints = await _userComplaints.GetAll();
+                _response.Result = _mapper.Map<List<ComplaintDTO>>(complaints);
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }
+            catch (Exception ex) 
+            {
+                _response.IsSuccess = false;
+                _response.Errors = new List<string> { ex.Message };
+              
+            }
+            return Ok(_response);
         }
 
         [HttpGet("id:int")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<ComplaintDTO>>> Get(int id)
+        public async Task<ActionResult<APIResponse>> Get(int id)
         {
-            if(id == 0)
+            try
             {
-                return BadRequest();
-            }
-            var complaint = await _userComplaints.Get(u => u.ComplaintId == id);
-            if(complaint == null)
+                if (id == 0)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_response);
+                }
+
+                var complaint = await _userComplaints.Get(u => u.ComplaintId == id);
+                if (complaint == null)
+                {
+                    _response.StatusCode = HttpStatusCode.NotFound;
+                    return NotFound(_response);
+                }
+                IEnumerable<Complaint> complaints = await _userComplaints.GetAll();
+                _response.Result = _mapper.Map<ComplaintDTO>(complaint);
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }catch(Exception ex)
             {
-                return NotFound();
+                _response.IsSuccess = false;
+                _response.Errors = new List<string> { ex.Message };
+              
             }
-            return Ok(_mapper.Map<ComplaintDTO>(complaint));
+            return _response;
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> CreateComplaint([FromForm] IFormFile file, 
-            [FromForm] string ComplainText,
-            [FromForm] int isApproved
+        public async Task<ActionResult<APIResponse>> CreateComplaint([FromForm]ComplaintDTO complaintDTO,
+            [FromForm] IFormFile file
             )
+            
         {
-            ValidateFileUpload(file);
-            if (ModelState.IsValid)
+
+         
+            try
             {
-                var complaints = new Complaint
-                {
-                    ComplaintText = ComplainText,
-                    isApproved = isApproved
+                ValidateFileUpload(file);
+                var localPath = Path.Combine(_webHostEnvironment.ContentRootPath, "Images",
+                $"{file.FileName}{Path.GetExtension(file.FileName).ToLower()}");
 
-                };
-                complaints = await _userComplaints.Create(file, ComplainText, isApproved, complaints);
+                using var stream = new FileStream(localPath, FileMode.Create);
+                await file.CopyToAsync(stream);
 
-                var response = new ComplaintDTO
+                var request = _contextAccessor.HttpContext!.Request;
+                var urlPath = $"{request.Scheme}://{request.Host}{request.PathBase}/Images/{file.FileName}{Path.GetExtension(file.FileName).ToLower()}";
+                complaintDTO.Url = urlPath;
+
+                if (complaintDTO == null)
                 {
-                    ComplaintText = complaints.ComplaintText,
-                    Url = complaints.Url,
-                    isApproved = complaints.isApproved,
-                };
-                return Ok(response);
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_response);
+                }
+
+                Complaint complaints = _mapper.Map<Complaint>(complaintDTO);
+                await _userComplaints.Create(complaints);
+                _response.Result = _mapper.Map<ComplaintDTO>(complaints);
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+
             }
-
-            return BadRequest(ModelState);
-
-            //if (complaintDTO == null)
-            //{
-            //    return BadRequest(complaintDTO);
-            //}
-
-            //Complaint complaints = _mapper.Map<Complaint>(complaintDTO);
-            //await _userComplaints.Create(file, complaintText, isApproved, complaints);
-
+            catch(Exception ex)
+            {
+                _response.Result = ex.Message;
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }
         }
+            
+
+        
 
        
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpDelete("{id:int}")]
-        public async Task<IActionResult> DeleteComplaint(int id)
+        public async Task<ActionResult<APIResponse>> DeleteComplaint(int id)
         {
-          if(id == 0)
-          {
-             return BadRequest();
-          }
-            var complaint = await _userComplaints.Get(u => u.ComplaintId == id);
-            if(complaint == null)
+            try
             {
-                return NotFound();
+                if (id == 0)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_response);
+                }
+                var complaint = await _userComplaints.Get(u => u.ComplaintId == id);
+                if (complaint == null)
+                {
+                    _response.StatusCode = HttpStatusCode.NotFound;
+                    return NotFound(_response);
+                }
+            
+                await _userComplaints.Remove(complaint!);
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                return Ok();
             }
-            await _userComplaints.Remove(complaint!);
-            return Ok();
+            catch(Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Errors = new List<string> { ex.Message };
+      
+            }
+            return _response;
         }
 
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateComplaint([FromForm] ComplaintUpdateDTO updateDTO, int id)
+        public async Task<ActionResult<APIResponse>> UpdateComplaint([FromForm] ComplaintUpdateDTO updateDTO, int id)
         {
-            if (updateDTO == null || id != updateDTO.ComplaintId)
+            try
             {
-                return BadRequest();
+                if (updateDTO == null || id != updateDTO.ComplaintId)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_response);
+                }
+                Complaint complaint = _mapper.Map<Complaint>(updateDTO);
+
+                await _userComplaints.Update(complaint!);
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                return Ok(_response);
             }
-            Complaint complaint = _mapper.Map<Complaint>(updateDTO);
-            
-            
-            await _userComplaints.Update(complaint!);
-            return Ok();
+            catch(Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Errors = new List<string> { ex.Message };
+               
+            }
+            return _response;
         }
 
         [ProducesResponseType(StatusCodes.Status200OK)]

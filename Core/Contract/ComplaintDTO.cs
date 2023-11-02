@@ -12,7 +12,6 @@ namespace Core.Contract
     public class ComplaintDTO
     {
         [Required]
-        [MaxLength(600)]
         public string? ComplaintText { get; set; }
         public string? Url { get; set; }
         public ICollection<Demand>? Demands { get; set; }

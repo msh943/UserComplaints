@@ -13,7 +13,6 @@ namespace Core.Domain
         [Key]
         public int DemandId { get; set; }
         [Required]
-        [MaxLength(600)]
         public string? Description { get; set; }
         [ForeignKey("ComplaintId")]
         public int ComplaintId { get; set; }

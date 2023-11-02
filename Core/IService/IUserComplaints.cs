@@ -9,13 +9,8 @@ using System.Threading.Tasks;
 
 namespace Core.IService
 {
-    public interface IUserComplaints
+    public interface IUserComplaints : IUnitOfWork<Complaint>
     {
-        Task<List<Complaint>> GetAll(Expression<Func<Complaint, bool>> filter = null);
-        Task<Complaint> Get(Expression<Func<Complaint, bool>> filter = null, bool tracked=true);
-        Task<Complaint> Create(IFormFile file,string complaint, int IsApproved, Complaint complaints);
-        Task Update(Complaint complaint);
-        Task Remove(Complaint complaint);
-        Task Save();
+        Task<Complaint> Update(Complaint complaint);
     }
 }
